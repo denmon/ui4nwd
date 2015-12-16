@@ -1,0 +1,57 @@
+HOSTNAME      = "your_host"
+LOGIN_ADDR    = "your_host_addr"
+LOGIN_USER    = "login_user"
+LOGIN_PROMPT  = ".*> ?"
+WORK_TYPE     = "OandM"
+ENABLE_PRMPT  = ".*# ?"
+CONFIRM       = "\(N/Y\)"
+
+;
+; # Logging
+;
+getdir DIR
+getdate DATE '%Y%m%d-%H%M%S
+;;;; makepath使った方が良いかも
+sprintf2 LOGFILE '%s\%s_%s_%s.log' DIR HOSTNAME WORK_TYPE DATE
+
+;
+; # パスワード暗号化＆永続化
+;
+
+; # パスワード暗号化ファイル
+sprintf2 PASSFILE '.\%s.dat' HOSTNAME
+sprintf2 LOGIN_PASS_NAME '%s LOGIN'HOSTNAME
+sprintf2 ENABLE_PASS_NAME '%s 特権'HOSTNAME
+
+; # ログインパスワード暗号化
+getpassword PASSFILE LOGIN_PASS_NAME LOGIN_PASSWD
+
+if !result then
+  messagebox 'ログインパスワード書き込みエラー' 'ERROR'
+endif
+
+; # 特権パスワード暗号化
+getpassword PASSFILE ENABLE_PASS_NAME ENABLE_PASSWD
+if !result then
+  messagebox '特権パスワード書き込みエラー' 'ERROR'
+endif
+
+;
+; # Login
+;
+
+; # Login Command（ssh)
+sprintf2 LOGIN_CMD '%s:22 /ssh /2 /auth=password /user=%s /passwd=%s' LOGIN_ADDR LOGIN_USER LOGIN_PASSWD
+
+;
+; # Connection
+;
+
+connect LOGIN_CMD
+; # Connection Error
+if result <> 2 then
+  sprintf2 MSG '%sに接続できませんでした' HOSTNAME
+  messagebox MSG '接続エラー'
+  end
+endif
+
